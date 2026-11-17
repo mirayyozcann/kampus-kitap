@@ -1,3 +1,5 @@
+import Header from "@/components/Header";
+
 type Book = {
   id: number;
   title: string;
@@ -45,19 +47,7 @@ const books: Book[] = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-indigo-600">KampüsKitap</h1>
-          <div className="flex gap-3 text-sm">
-            <button className="rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100">
-              Giriş Yap
-            </button>
-            <button className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">
-              Kayıt Ol
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <section className="mx-auto max-w-5xl px-4 py-12 text-center">
         <h2 className="text-3xl font-bold text-gray-900">
