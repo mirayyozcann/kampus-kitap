@@ -1,48 +1,42 @@
+import { Suspense } from "react";
 import Header from "@/components/Header";
+import { prisma } from "@/lib/prisma";
 
-type Book = {
-  id: number;
-  title: string;
-  course: string;
-  department: string;
-  price: number;
-  condition: string;
-};
+async function Listings() {
+  const listings = await prisma.listing.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 40,
+  });
 
-const books: Book[] = [
-  {
-    id: 1,
-    title: "Introduction to Algorithms",
-    course: "BIL 201",
-    department: "Bilgisayar Mühendisliği",
-    price: 250,
-    condition: "Az kullanılmış",
-  },
-  {
-    id: 2,
-    title: "Calculus: Early Transcendentals",
-    course: "MAT 101",
-    department: "Matematik",
-    price: 180,
-    condition: "Yeni",
-  },
-  {
-    id: 3,
-    title: "Database System Concepts",
-    course: "BIL 301",
-    department: "Bilgisayar Mühendisliği",
-    price: 200,
-    condition: "Yıpranmış",
-  },
-  {
-    id: 4,
-    title: "Fizik I",
-    course: "FIZ 101",
-    department: "Fizik",
-    price: 120,
-    condition: "Az kullanılmış",
-  },
-];
+  if (listings.length === 0) {
+    return (
+      <p className="rounded-xl border bg-white p-6 text-center text-gray-500">
+        Henüz ilan yok. İlk ilanı sen ver!
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {listings.map((listing) => (
+        <div
+          key={listing.id}
+          className="rounded-xl border bg-white p-4 shadow-sm"
+        >
+          <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
+            {listing.course}
+          </span>
+          <h4 className="mt-3 font-semibold text-gray-900">{listing.title}</h4>
+          <p className="mt-1 text-sm text-gray-500">{listing.department}</p>
+          <p className="mt-1 text-sm text-gray-500">{listing.condition}</p>
+          <p className="mt-3 text-lg font-bold text-gray-900">
+            {listing.price} TL
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -62,25 +56,11 @@ export default function Home() {
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Son ilanlar
         </h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {books.map((book) => (
-            <div
-              key={book.id}
-              className="rounded-xl border bg-white p-4 shadow-sm"
-            >
-              <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
-                {book.course}
-              </span>
-              <h4 className="mt-3 font-semibold text-gray-900">{book.title}</h4>
-              <p className="mt-1 text-sm text-gray-500">{book.department}</p>
-              <p className="mt-1 text-sm text-gray-500">{book.condition}</p>
-              <p className="mt-3 text-lg font-bold text-gray-900">
-                {book.price} TL
-              </p>
-            </div>
-          ))}
-        </div>
+        <Suspense fallback={<p className="text-gray-500">Yükleniyor...</p>}>
+          <Listings />
+        </Suspense>
       </section>
     </main>
   );
 }
+
