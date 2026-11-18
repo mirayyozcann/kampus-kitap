@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import { prisma } from "@/lib/prisma";
 
@@ -19,9 +20,10 @@ async function Listings() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {listings.map((listing) => (
-        <div
+        <Link
           key={listing.id}
-          className="rounded-xl border bg-white p-4 shadow-sm"
+          href={`/ilan/${listing.id}`}
+          className="block rounded-xl border bg-white p-4 shadow-sm hover:shadow-md"
         >
           <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
             {listing.course}
@@ -37,7 +39,7 @@ async function Listings() {
           <p className="mt-3 text-lg font-bold text-gray-900">
             {listing.price} TL
           </p>
-        </div>
+        </Link>
       ))}
     </div>
   );
@@ -68,4 +70,3 @@ export default function Home() {
     </main>
   );
 }
-
