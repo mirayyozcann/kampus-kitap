@@ -23,6 +23,12 @@ export default function Header() {
         <div className="flex items-center gap-3 text-sm">
           {isPending ? null : session ? (
             <>
+              <Link
+                href="/ilan/yeni"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+              >
+                İlan Ver
+              </Link>
               <span className="text-gray-700">{session.user.name}</span>
               <button
                 onClick={handleSignOut}
