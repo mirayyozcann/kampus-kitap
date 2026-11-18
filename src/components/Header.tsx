@@ -14,46 +14,51 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b bg-white">
+    <header className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <Link href="/" className="text-xl font-bold text-indigo-600">
+        <Link
+          href="/"
+          className="text-lg font-semibold tracking-tight text-ink"
+        >
           KampüsKitap
         </Link>
 
-        <div className="flex items-center gap-3 text-sm">
+        <nav className="flex items-center gap-2 text-sm">
           {isPending ? null : session ? (
             <>
-              <Link
-                href="/ilan/yeni"
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-              >
-                İlan Ver
-              </Link>
-              <span className="text-gray-700">{session.user.name}</span>
+              <span className="hidden px-2 text-muted sm:inline">
+                {session.user.name}
+              </span>
               <button
                 onClick={handleSignOut}
-                className="rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className="rounded-lg px-3 py-2 text-ink hover:bg-chip"
               >
-                Çıkış Yap
+                Çıkış yap
               </button>
+              <Link
+                href="/ilan/yeni"
+                className="rounded-lg bg-ink px-4 py-2 font-medium text-paper hover:opacity-90"
+              >
+                İlan ver
+              </Link>
             </>
           ) : (
             <>
               <Link
                 href="/giris"
-                className="rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className="rounded-lg px-3 py-2 text-ink hover:bg-chip"
               >
-                Giriş Yap
+                Giriş yap
               </Link>
               <Link
                 href="/kayit"
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                className="rounded-lg bg-ink px-4 py-2 font-medium text-paper hover:opacity-90"
               >
-                Kayıt Ol
+                Kayıt ol
               </Link>
             </>
           )}
-        </div>
+        </nav>
       </div>
     </header>
   );

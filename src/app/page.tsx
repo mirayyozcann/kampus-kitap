@@ -6,14 +6,45 @@ import { prisma } from "@/lib/prisma";
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const CONDITIONS = ["Yeni", "Az kullanılmış", "Yıpranmış"];
+const COVERS = [
+  "#AFA9EC",
+  "#5DCAA5",
+  "#F0997B",
+  "#ED93B1",
+  "#85B7EB",
+  "#97C459",
+];
+
+const SPINES = [
+  { code: "BIL 201", color: "#AFA9EC", h: "h-20", w: "w-9" },
+  { code: "MAT 101", color: "#5DCAA5", h: "h-16", w: "w-8" },
+  { code: "FIZ 101", color: "#F0997B", h: "h-24", w: "w-10" },
+  { code: "KIM 101", color: "#ED93B1", h: "h-14", w: "w-8" },
+  { code: "EEM 201", color: "#85B7EB", h: "h-20", w: "w-9" },
+  { code: "ISL 101", color: "#97C459", h: "h-16", w: "w-8" },
+  { code: "BIL 301", color: "#AFA9EC", h: "h-24", w: "w-10" },
+  { code: "MAT 201", color: "#F0997B", h: "h-14", w: "w-8" },
+  { code: "BIL 101", color: "#5DCAA5", h: "h-20", w: "w-9" },
+  { code: "FIZ 201", color: "#85B7EB", h: "h-16", w: "w-8" },
+  { code: "TAR 101", color: "#ED93B1", h: "h-24", w: "w-10" },
+  { code: "ING 101", color: "#97C459", h: "h-14", w: "w-8" },
+];
 
 function first(value: string | string[] | undefined) {
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
-async function Browse({ searchParams }: { searchParams: SearchParams }) {
-  const params = await searchParams;
+function coverColor(department: string) {
+  let hash = 0;
+  for (const ch of department.toLowerCase()) {
+    hash = (hash * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
+  }
+  return COVERS[hash % COVERS.length];
+}
 
+function parseParams(params: {
+  [key: string]: string | string[] | undefined;
+}) {
   const q = first(params.q);
   const conditionRaw = first(params.condition);
   const condition = CONDITIONS.includes(conditionRaw) ? conditionRaw : "";
@@ -24,7 +55,72 @@ async function Browse({ searchParams }: { searchParams: SearchParams }) {
       ? Math.floor(maxPriceNum)
       : null;
 
-  const hasFilter = q !== "" || condition !== "" || maxPrice !== null;
+  return {
+    q,
+    condition,
+    maxPriceRaw,
+    maxPrice,
+    hasFilter: q !== "" || condition !== "" || maxPrice !== null,
+  };
+}
+
+async function SearchForm({ searchParams }: { searchParams: SearchParams }) {
+  const { q, condition, maxPriceRaw, hasFilter } = parseParams(
+    await searchParams,
+  );
+
+  return (
+    <form action="/" method="get">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          name="q"
+          type="text"
+          defaultValue={q}
+          placeholder="Ders kodu veya kitap adı (ör. BIL 201)"
+          className="flex-1 rounded-2xl bg-white px-5 py-4 text-lg text-ink outline-none placeholder:text-muted focus:ring-4 focus:ring-marker"
+        />
+        <button
+          type="submit"
+          className="rounded-2xl bg-marker px-8 py-4 text-lg font-semibold text-ink hover:opacity-90"
+        >
+          Ara
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <select
+          name="condition"
+          defaultValue={condition}
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-paper [&>option]:text-ink"
+        >
+          <option value="">Tüm durumlar</option>
+          {CONDITIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <input
+          name="maxPrice"
+          type="number"
+          min={0}
+          defaultValue={maxPriceRaw}
+          placeholder="En yüksek fiyat (TL)"
+          className="w-48 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-paper placeholder:text-paper/50"
+        />
+        {hasFilter && (
+          <Link href="/" className="px-2 text-paper/70 underline">
+            Filtreleri temizle
+          </Link>
+        )}
+      </div>
+    </form>
+  );
+}
+
+async function Results({ searchParams }: { searchParams: SearchParams }) {
+  const { q, condition, maxPrice, hasFilter } = parseParams(
+    await searchParams,
+  );
 
   const listings = await prisma.listing.findMany({
     where: {
@@ -46,89 +142,75 @@ async function Browse({ searchParams }: { searchParams: SearchParams }) {
     take: 40,
   });
 
-  const inputClass = "rounded-lg border bg-white px-3 py-2 text-gray-900";
-
   return (
     <>
-      <form
-        action="/"
-        method="get"
-        className="mb-6 grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto]"
-      >
-        <input
-          name="q"
-          type="text"
-          defaultValue={q}
-          placeholder="Ders kodu, kitap adı veya bölüm (ör. BIL 201)"
-          className={inputClass}
-        />
-        <select
-          name="condition"
-          defaultValue={condition}
-          className={inputClass}
-        >
-          <option value="">Tüm durumlar</option>
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <input
-          name="maxPrice"
-          type="number"
-          min={0}
-          defaultValue={maxPriceRaw}
-          placeholder="En yüksek fiyat (TL)"
-          className={inputClass}
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-indigo-600 px-5 py-2 text-white hover:bg-indigo-700"
-        >
-          Ara
-        </button>
-      </form>
-
-      <div className="mb-4 flex items-center justify-between text-sm text-gray-500">
-        <span>{listings.length} ilan bulundu</span>
-        {hasFilter && (
-          <Link href="/" className="text-indigo-600 hover:underline">
-            Filtreleri temizle
-          </Link>
-        )}
+      <div className="mb-6 flex items-baseline justify-between">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {hasFilter ? "Arama sonuçları" : "Son ilanlar"}
+        </h2>
+        <span className="text-sm text-muted">{listings.length} ilan</span>
       </div>
 
       {listings.length === 0 ? (
-        <p className="rounded-xl border bg-white p-6 text-center text-gray-500">
-          {hasFilter
-            ? "Aramana uygun ilan bulunamadı."
-            : "Henüz ilan yok. İlk ilanı sen ver!"}
-        </p>
+        <div className="rounded-2xl border border-line bg-white p-10 text-center">
+          <p className="text-lg font-semibold">
+            {hasFilter ? "Aramana uygun ilan yok" : "İlk ilanı sen ver"}
+          </p>
+          <p className="mt-1 text-muted">
+            {hasFilter
+              ? "Başka bir ders kodu dene ya da filtreleri temizle."
+              : "Ders kitabını birkaç dakikada satışa çıkar."}
+          </p>
+          {!hasFilter && (
+            <Link
+              href="/ilan/yeni"
+              className="mt-5 inline-block rounded-xl bg-ink px-5 py-3 font-medium text-paper hover:opacity-90"
+            >
+              İlan ver
+            </Link>
+          )}
+        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {listings.map((listing) => (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+          {listings.map((listing, i) => (
             <Link
               key={listing.id}
               href={`/ilan/${listing.id}`}
-              className="block rounded-xl border bg-white p-4 shadow-sm hover:shadow-md"
+              className="rise group block"
+              style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
             >
-              <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
-                {listing.course}
-              </span>
-              <h4 className="mt-3 font-semibold text-gray-900">
-                {listing.title}
-              </h4>
-              <p className="mt-1 text-sm text-gray-500">{listing.department}</p>
-              <p className="mt-1 text-sm text-gray-500">{listing.condition}</p>
-              {listing.description && (
-                <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                  {listing.description}
+              <div
+                className="relative aspect-[4/5] overflow-hidden rounded-l-sm rounded-r-lg shadow-sm transition duration-200 group-hover:-translate-y-1 group-hover:-rotate-1"
+                style={{ backgroundColor: coverColor(listing.department) }}
+              >
+                <div className="absolute inset-y-0 left-0 w-3 bg-black/15" />
+                <div className="flex h-full flex-col justify-between py-4 pl-6 pr-4">
+                  <span className="self-start rounded-sm bg-marker px-1.5 text-lg font-semibold leading-snug text-ink">
+                    {listing.course}
+                  </span>
+                  <div>
+                    <h3 className="line-clamp-3 text-xl font-semibold leading-tight tracking-tight text-ink">
+                      {listing.title}
+                    </h3>
+                    <div className="mt-3 flex items-end justify-between gap-2">
+                      <p className="line-clamp-2 max-w-[55%] text-xs text-ink/70">
+                        {listing.department}
+                      </p>
+                      <span className="rotate-3 rounded-md bg-ink px-2 py-1 text-sm font-semibold text-paper">
+                        {listing.price} TL
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-start justify-between gap-2">
+                <p className="line-clamp-2 text-sm text-muted">
+                  {listing.description ?? ""}
                 </p>
-              )}
-              <p className="mt-3 text-lg font-bold text-gray-900">
-                {listing.price} TL
-              </p>
+                <span className="shrink-0 rounded-md bg-chip px-2 py-1 text-xs text-ink">
+                  {listing.condition}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
@@ -143,21 +225,55 @@ export default function Home({
   searchParams: SearchParams;
 }) {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-paper">
       <Header />
 
-      <section className="mx-auto max-w-5xl px-4 py-12 text-center">
-        <h2 className="text-3xl font-bold text-gray-900">
-          Ders kitabını bul, kampüste al-sat
-        </h2>
-        <p className="mt-3 text-gray-600">
-          Ders koduna göre ara, uygun fiyatlı kitabı bul.
-        </p>
+      <section className="bg-ink text-paper">
+        <div className="mx-auto max-w-5xl px-4 pt-14">
+          <p className="rise inline-block rounded-full border border-white/20 px-3 py-1 text-sm text-paper/80">
+            Kampüste ders kitabı al-sat
+          </p>
+          <h1
+            className="rise mt-5 max-w-3xl text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl"
+            style={{ animationDelay: "80ms" }}
+          >
+            Ders kitabını <span className="marker-sweep">bul</span>, kampüste
+            sat.
+          </h1>
+          <p
+            className="rise mt-5 max-w-xl text-lg text-paper/70"
+            style={{ animationDelay: "160ms" }}
+          >
+            Ders koduyla ara. Fiyatı, durumu ve satıcıyı karşılaştır.
+          </p>
+
+          <div className="rise mt-8" style={{ animationDelay: "240ms" }}>
+            <Suspense
+              fallback={<div className="h-14 rounded-2xl bg-white/10" />}
+            >
+              <SearchForm searchParams={searchParams} />
+            </Suspense>
+          </div>
+
+          <div aria-hidden="true" className="mt-14 flex items-end gap-1 overflow-hidden">
+            {[...SPINES, ...SPINES].map((s, i) => (
+              <div
+                key={i}
+                className={`${s.w} ${s.h} flex shrink-0 justify-center rounded-t-sm pt-2`}
+                style={{ backgroundColor: s.color }}
+              >
+                <span className="text-[10px] font-semibold tracking-wide text-ink/70 [writing-mode:vertical-rl]">
+                  {s.code}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 pb-16">
-        <Suspense fallback={<p className="text-gray-500">Yükleniyor...</p>}>
-          <Browse searchParams={searchParams} />
+      <section className="mx-auto max-w-5xl px-4 py-12">
+        <Suspense fallback={<p className="text-muted">Yükleniyor...</p>}>
+          <Results searchParams={searchParams} />
         </Suspense>
       </section>
     </main>
