@@ -1,8 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
+import DeleteListingButton from "@/components/DeleteListingButton";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteListing } from "./actions";
 
 async function IlanDetay({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,6 +20,9 @@ async function IlanDetay({ params }: { params: Promise<{ id: string }> }) {
   });
 
   if (!listing) notFound();
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  const isOwner = session?.user.id === listing.sellerId;
 
   return (
     <article className="rounded-xl border bg-white p-6 shadow-sm">
@@ -52,6 +59,18 @@ async function IlanDetay({ params }: { params: Promise<{ id: string }> }) {
           <p className="mt-1 whitespace-pre-wrap text-gray-700">
             {listing.description}
           </p>
+        </div>
+      )}
+
+      {isOwner && (
+        <div className="mt-8 flex items-center gap-3 border-t pt-6">
+          <Link
+            href={`/ilan/${listing.id}/duzenle`}
+            className="rounded-lg border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Düzenle
+          </Link>
+          <DeleteListingButton action={deleteListing.bind(null, listing.id)} />
         </div>
       )}
     </article>
