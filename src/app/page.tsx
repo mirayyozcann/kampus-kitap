@@ -29,6 +29,11 @@ async function Listings() {
           <h4 className="mt-3 font-semibold text-gray-900">{listing.title}</h4>
           <p className="mt-1 text-sm text-gray-500">{listing.department}</p>
           <p className="mt-1 text-sm text-gray-500">{listing.condition}</p>
+          {listing.description && (
+            <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+              {listing.description}
+            </p>
+          )}
           <p className="mt-3 text-lg font-bold text-gray-900">
             {listing.price} TL
           </p>
