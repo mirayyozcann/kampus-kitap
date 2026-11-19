@@ -7,8 +7,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateListing } from "../actions";
 
-const inputClass = "mt-1 w-full rounded-lg border px-3 py-2 text-gray-900";
 const CONDITIONS = ["Yeni", "Az kullanılmış", "Yıpranmış"];
+
+const inputClass =
+  "mt-1.5 h-12 w-full rounded-xl border border-line bg-white px-4 text-ink outline-none focus:border-ink";
 
 async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,11 +30,9 @@ async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
   return (
     <form
       action={updateListing.bind(null, listing.id)}
-      className="rounded-xl border bg-white p-6 shadow-sm"
+      className="rounded-2xl border border-line bg-white p-6 sm:p-8"
     >
-      <h1 className="text-xl font-bold text-gray-900">İlanı Düzenle</h1>
-
-      <label className="mt-6 block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium">
         Kitap adı
         <input
           name="title"
@@ -43,18 +43,32 @@ async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
         />
       </label>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700">
-        Ders kodu
-        <input
-          name="course"
-          type="text"
-          required
-          defaultValue={listing.course}
-          className={inputClass}
-        />
-      </label>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm font-medium">
+          Ders kodu
+          <input
+            name="course"
+            type="text"
+            required
+            defaultValue={listing.course}
+            className={inputClass}
+          />
+        </label>
+        <label className="block text-sm font-medium">
+          Fiyat (TL)
+          <input
+            name="price"
+            type="number"
+            required
+            min={0}
+            step={1}
+            defaultValue={listing.price}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700">
+      <label className="mt-4 block text-sm font-medium">
         Bölüm
         <input
           name="department"
@@ -65,20 +79,7 @@ async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
         />
       </label>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700">
-        Fiyat (TL)
-        <input
-          name="price"
-          type="number"
-          required
-          min={0}
-          step={1}
-          defaultValue={listing.price}
-          className={inputClass}
-        />
-      </label>
-
-      <label className="mt-4 block text-sm font-medium text-gray-700">
+      <label className="mt-4 block text-sm font-medium">
         Durum
         <select
           name="condition"
@@ -94,21 +95,22 @@ async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
         </select>
       </label>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700">
-        Açıklama (isteğe bağlı)
+      <label className="mt-4 block text-sm font-medium">
+        Açıklama
+        <span className="ml-1 font-normal text-muted">(isteğe bağlı)</span>
         <textarea
           name="description"
-          rows={3}
+          rows={4}
           defaultValue={listing.description ?? ""}
-          className={inputClass}
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none focus:border-ink"
         />
       </label>
 
       <button
         type="submit"
-        className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+        className="mt-6 h-12 w-full rounded-xl bg-ink font-medium text-paper hover:opacity-90"
       >
-        Değişiklikleri Kaydet
+        Değişiklikleri kaydet
       </button>
     </form>
   );
@@ -120,14 +122,17 @@ export default function DuzenlePage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-paper">
       <Header />
-      <div className="mx-auto max-w-lg px-4 py-10">
-        <Link href="/" className="text-sm text-indigo-600 hover:underline">
+      <div className="mx-auto max-w-xl px-4 py-10">
+        <Link href="/" className="text-sm text-muted hover:text-ink">
           ← Tüm ilanlar
         </Link>
-        <div className="mt-4">
-          <Suspense fallback={<p className="text-gray-500">Yükleniyor...</p>}>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+          İlanı <span className="marker-sweep">düzenle</span>
+        </h1>
+        <div className="mt-8">
+          <Suspense fallback={<p className="text-muted">Yükleniyor...</p>}>
             <DuzenleForm params={params} />
           </Suspense>
         </div>
