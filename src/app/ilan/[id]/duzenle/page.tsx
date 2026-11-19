@@ -3,14 +3,11 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Header from "@/components/Header";
+import ListingForm from "@/components/ListingForm";
+import DeleteListingButton from "@/components/DeleteListingButton";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { updateListing } from "../actions";
-
-const CONDITIONS = ["Yeni", "Az kullanılmış", "Yıpranmış"];
-
-const inputClass =
-  "mt-1.5 h-12 w-full rounded-xl border border-line bg-white px-4 text-ink outline-none focus:border-ink";
+import { deleteListing, updateListing } from "../actions";
 
 async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,91 +25,40 @@ async function DuzenleForm({ params }: { params: Promise<{ id: string }> }) {
   if (!listing || listing.sellerId !== session.user.id) notFound();
 
   return (
-    <form
-      action={updateListing.bind(null, listing.id)}
-      className="rounded-2xl border border-line bg-white p-6 sm:p-8"
-    >
-      <label className="block text-sm font-medium">
-        Kitap adı
-        <input
-          name="title"
-          type="text"
-          required
-          defaultValue={listing.title}
-          className={inputClass}
-        />
-      </label>
+    <>
+      <p className="mb-8 text-sm text-muted">
+        İlan no {listing.id} · {listing.createdAt.toLocaleDateString("tr-TR")}{" "}
+        tarihinde yayınlandı ·{" "}
+        <Link href={`/ilan/${listing.id}`} className="underline">
+          İlanı gör
+        </Link>
+      </p>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-medium">
-          Ders kodu
-          <input
-            name="course"
-            type="text"
-            required
-            defaultValue={listing.course}
-            className={inputClass}
-          />
-        </label>
-        <label className="block text-sm font-medium">
-          Fiyat (TL)
-          <input
-            name="price"
-            type="number"
-            required
-            min={0}
-            step={1}
-            defaultValue={listing.price}
-            className={inputClass}
-          />
-        </label>
+      <ListingForm
+        mode="edit"
+        cancelHref={`/ilan/${listing.id}`}
+        action={updateListing.bind(null, listing.id)}
+        submitLabel="Kaydet"
+        defaults={{
+          title: listing.title,
+          course: listing.course,
+          department: listing.department,
+          price: listing.price,
+          condition: listing.condition,
+          description: listing.description,
+        }}
+      />
+
+      <div className="mt-12 rounded-2xl border border-red-200 bg-red-50 p-6">
+        <h2 className="font-semibold text-red-800">Tehlikeli alan</h2>
+        <p className="mt-1 text-sm text-red-900/70">
+          İlanı sildiğinde geri alamazsın.
+        </p>
+        <div className="mt-4">
+          <DeleteListingButton action={deleteListing.bind(null, listing.id)} />
+        </div>
       </div>
-
-      <label className="mt-4 block text-sm font-medium">
-        Bölüm
-        <input
-          name="department"
-          type="text"
-          required
-          defaultValue={listing.department}
-          className={inputClass}
-        />
-      </label>
-
-      <label className="mt-4 block text-sm font-medium">
-        Durum
-        <select
-          name="condition"
-          required
-          defaultValue={listing.condition}
-          className={inputClass}
-        >
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="mt-4 block text-sm font-medium">
-        Açıklama
-        <span className="ml-1 font-normal text-muted">(isteğe bağlı)</span>
-        <textarea
-          name="description"
-          rows={4}
-          defaultValue={listing.description ?? ""}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none focus:border-ink"
-        />
-      </label>
-
-      <button
-        type="submit"
-        className="mt-6 h-12 w-full rounded-xl bg-ink font-medium text-paper hover:opacity-90"
-      >
-        Değişiklikleri kaydet
-      </button>
-    </form>
+    </>
   );
 }
 
@@ -124,19 +70,27 @@ export default function DuzenlePage({
   return (
     <main className="min-h-screen bg-paper">
       <Header />
-      <div className="mx-auto max-w-xl px-4 py-10">
-        <Link href="/" className="text-sm text-muted hover:text-ink">
-          ← Tüm ilanlar
-        </Link>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-          İlanı <span className="marker-sweep">düzenle</span>
-        </h1>
-        <div className="mt-8">
-          <Suspense fallback={<p className="text-muted">Yükleniyor...</p>}>
-            <DuzenleForm params={params} />
-          </Suspense>
+
+      <section className="bg-ink text-paper">
+        <div className="mx-auto max-w-5xl px-4 pb-12 pt-10">
+          <Link href="/" className="text-sm text-paper/70 hover:text-paper">
+            ← Tüm ilanlar
+          </Link>
+          <h1 className="rise mt-4 text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
+            İlanı <span className="marker-sweep">düzenle</span>
+          </h1>
+          <p className="mt-3 max-w-lg text-lg text-paper/70">
+            Değiştirdiğin her şey anında özetleniyor. Fiyatı düşürürsen kapakta
+            indirim görünür.
+          </p>
         </div>
-      </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-32 pt-10">
+        <Suspense fallback={<p className="text-muted">Yükleniyor...</p>}>
+          <DuzenleForm params={params} />
+        </Suspense>
+      </section>
     </main>
   );
 }
