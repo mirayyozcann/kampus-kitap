@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import DeleteListingButton from "@/components/DeleteListingButton";
 import { auth } from "@/lib/auth";
+import { coverColor } from "@/lib/cover";
 import { prisma } from "@/lib/prisma";
 import { deleteListing } from "./actions";
 
@@ -25,54 +26,73 @@ async function IlanDetay({ params }: { params: Promise<{ id: string }> }) {
   const isOwner = session?.user.id === listing.sellerId;
 
   return (
-    <article className="rounded-xl border bg-white p-6 shadow-sm">
-      <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
-        {listing.course}
-      </span>
-      <h1 className="mt-3 text-2xl font-bold text-gray-900">{listing.title}</h1>
-      <p className="mt-1 text-gray-500">{listing.department}</p>
-
-      <p className="mt-4 text-3xl font-bold text-gray-900">
-        {listing.price} TL
-      </p>
-
-      <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <dt className="text-gray-500">Durum</dt>
-          <dd className="font-medium text-gray-900">{listing.condition}</dd>
+    <article>
+      <div
+        className="relative overflow-hidden rounded-3xl p-6 sm:p-10"
+        style={{ backgroundColor: coverColor(listing.department) }}
+      >
+        <div className="absolute inset-y-0 left-0 w-4 bg-black/15" />
+        <div className="pl-4">
+          <span className="inline-block rounded-sm bg-marker px-2 text-2xl font-semibold leading-snug text-ink">
+            {listing.course}
+          </span>
+          <h1 className="mt-6 max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            {listing.title}
+          </h1>
+          <p className="mt-3 text-ink/70">{listing.department}</p>
         </div>
-        <div>
-          <dt className="text-gray-500">Satıcı</dt>
-          <dd className="font-medium text-gray-900">{listing.seller.name}</dd>
-        </div>
-        <div>
-          <dt className="text-gray-500">İlan tarihi</dt>
-          <dd className="font-medium text-gray-900">
-            {listing.createdAt.toLocaleDateString("tr-TR")}
-          </dd>
-        </div>
-      </dl>
+      </div>
 
-      {listing.description && (
-        <div className="mt-6">
-          <h2 className="text-sm font-semibold text-gray-900">Açıklama</h2>
-          <p className="mt-1 whitespace-pre-wrap text-gray-700">
-            {listing.description}
+      <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_16rem]">
+        <div className="order-2 sm:order-1">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Açıklama
+          </h2>
+          {listing.description ? (
+            <p className="mt-2 whitespace-pre-wrap text-lg leading-relaxed text-ink">
+              {listing.description}
+            </p>
+          ) : (
+            <p className="mt-2 text-muted">Satıcı açıklama eklememiş.</p>
+          )}
+        </div>
+
+        <aside className="order-1 h-fit rounded-2xl border border-line bg-white p-5 sm:order-2">
+          <p className="text-4xl font-semibold tracking-tight text-ink">
+            {listing.price} TL
           </p>
-        </div>
-      )}
+          <span className="mt-3 inline-block rounded-md bg-chip px-2 py-1 text-sm text-ink">
+            {listing.condition}
+          </span>
 
-      {isOwner && (
-        <div className="mt-8 flex items-center gap-3 border-t pt-6">
-          <Link
-            href={`/ilan/${listing.id}/duzenle`}
-            className="rounded-lg border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Düzenle
-          </Link>
-          <DeleteListingButton action={deleteListing.bind(null, listing.id)} />
-        </div>
-      )}
+          <dl className="mt-5 space-y-3 border-t border-line pt-5 text-sm">
+            <div>
+              <dt className="text-muted">Satıcı</dt>
+              <dd className="font-medium text-ink">{listing.seller.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">İlan tarihi</dt>
+              <dd className="font-medium text-ink">
+                {listing.createdAt.toLocaleDateString("tr-TR")}
+              </dd>
+            </div>
+          </dl>
+
+          {isOwner && (
+            <div className="mt-5 flex items-center gap-2 border-t border-line pt-5">
+              <Link
+                href={`/ilan/${listing.id}/duzenle`}
+                className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-paper hover:opacity-90"
+              >
+                Düzenle
+              </Link>
+              <DeleteListingButton
+                action={deleteListing.bind(null, listing.id)}
+              />
+            </div>
+          )}
+        </aside>
+      </div>
     </article>
   );
 }
@@ -83,14 +103,14 @@ export default function IlanDetayPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-paper">
       <Header />
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <Link href="/" className="text-sm text-indigo-600 hover:underline">
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <Link href="/" className="text-sm text-muted hover:text-ink">
           ← Tüm ilanlar
         </Link>
         <div className="mt-4">
-          <Suspense fallback={<p className="text-gray-500">Yükleniyor...</p>}>
+          <Suspense fallback={<p className="text-muted">Yükleniyor...</p>}>
             <IlanDetay params={params} />
           </Suspense>
         </div>
