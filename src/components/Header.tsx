@@ -10,6 +10,7 @@ export default function Header() {
 
   async function handleSignOut() {
     await authClient.signOut();
+    router.push("/");
     router.refresh();
   }
 
@@ -23,10 +24,16 @@ export default function Header() {
           KampüsKitap
         </Link>
 
-        <nav className="flex items-center gap-2 text-sm">
+        <nav className="flex items-center gap-1 text-sm sm:gap-2">
           {isPending ? null : session ? (
             <>
-              <span className="hidden px-2 text-muted sm:inline">
+              <Link
+                href="/ilanlarim"
+                className="rounded-lg px-3 py-2 font-medium text-ink hover:bg-chip"
+              >
+                İlanlarım
+              </Link>
+              <span className="hidden px-2 text-muted md:inline">
                 {session.user.name}
               </span>
               <button
