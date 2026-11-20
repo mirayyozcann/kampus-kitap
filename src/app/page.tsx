@@ -1,19 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { coverColor } from "@/lib/cover";
 import { prisma } from "@/lib/prisma";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const CONDITIONS = ["Yeni", "Az kullanılmış", "Yıpranmış"];
-const COVERS = [
-  "#AFA9EC",
-  "#5DCAA5",
-  "#F0997B",
-  "#ED93B1",
-  "#85B7EB",
-  "#97C459",
-];
 
 const SPINES = [
   { code: "BIL 201", color: "#AFA9EC", h: "h-20", w: "w-9" },
@@ -32,14 +25,6 @@ const SPINES = [
 
 function first(value: string | string[] | undefined) {
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
-}
-
-function coverColor(department: string) {
-  let hash = 0;
-  for (const ch of department.toLowerCase()) {
-    hash = (hash * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
-  }
-  return COVERS[hash % COVERS.length];
 }
 
 function parseParams(params: {
@@ -64,6 +49,23 @@ function parseParams(params: {
   };
 }
 
+function buildHref(q: string, maxPriceRaw: string, condition: string) {
+  const sp = new URLSearchParams();
+  if (q) sp.set("q", q);
+  if (condition) sp.set("condition", condition);
+  if (maxPriceRaw) sp.set("maxPrice", maxPriceRaw);
+  const s = sp.toString();
+  return s ? `/?${s}` : "/";
+}
+
+function chipClass(active: boolean) {
+  return `inline-flex h-11 items-center rounded-full border px-4 text-sm transition ${
+    active
+      ? "border-marker bg-marker font-semibold text-ink"
+      : "border-white/20 text-paper hover:border-white/50"
+  }`;
+}
+
 async function SearchForm({ searchParams }: { searchParams: SearchParams }) {
   const { q, condition, maxPriceRaw, hasFilter } = parseParams(
     await searchParams,
@@ -71,6 +73,8 @@ async function SearchForm({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <form action="/" method="get">
+      {condition && <input type="hidden" name="condition" value={condition} />}
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           name="q"
@@ -86,29 +90,35 @@ async function SearchForm({ searchParams }: { searchParams: SearchParams }) {
           Ara
         </button>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-        <select
-          name="condition"
-          defaultValue={condition}
-          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-paper [&>option]:text-ink"
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Link
+          href={buildHref(q, maxPriceRaw, "")}
+          className={chipClass(condition === "")}
         >
-          <option value="">Tüm durumlar</option>
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          Tümü
+        </Link>
+        {CONDITIONS.map((c) => (
+          <Link
+            key={c}
+            href={buildHref(q, maxPriceRaw, c)}
+            className={chipClass(condition === c)}
+          >
+            {c}
+          </Link>
+        ))}
+
         <input
           name="maxPrice"
           type="number"
           min={0}
           defaultValue={maxPriceRaw}
           placeholder="En yüksek fiyat (TL)"
-          className="w-48 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-paper placeholder:text-paper/50"
+          className="h-11 w-48 rounded-full border border-white/20 bg-white/10 px-4 text-sm text-paper placeholder:text-paper/50"
         />
+
         {hasFilter && (
-          <Link href="/" className="px-2 text-paper/70 underline">
+          <Link href="/" className="px-2 text-sm text-paper/70 underline">
             Filtreleri temizle
           </Link>
         )}
@@ -255,7 +265,10 @@ export default function Home({
             </Suspense>
           </div>
 
-          <div aria-hidden="true" className="mt-14 flex items-end gap-1 overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="mt-14 flex items-end gap-1 overflow-hidden"
+          >
             {[...SPINES, ...SPINES].map((s, i) => (
               <div
                 key={i}
